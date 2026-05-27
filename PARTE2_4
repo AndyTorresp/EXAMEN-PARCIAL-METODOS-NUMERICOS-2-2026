@@ -1,0 +1,10 @@
+from scipy.interpolate import CubicSpline
+
+# Reconstruimos el spline de voltaje de toda la tabla con condición natural
+spline_V = CubicSpline(f, V, bc_type='natural')
+
+print("=== PARTE 2 - PREGUNTA 4: DERIVADA DEL SPLINE ===")
+for fe in [40.0, 70.0, 100.0]:
+    # El parámetro '1' extrae la primera derivada analítica de los polinomios acoplados
+    dVdf_spline = spline_V(fe, 1)
+    print(f"Frecuencia: {fe} kHz -> Derivada del Spline: {dVdf_spline:.4f} V/kHz")
