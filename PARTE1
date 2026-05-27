@@ -1,0 +1,52 @@
+import numpy as np
+from scipy.interpolate import CubicSpline
+
+# 1. CARGA DE DATOS ORIGINALES DEL ENSAYO
+datos = np.array([
+    [10.0, 0.842, 182.4], [12.5, 0.911, 178.9], [15.0, 0.986, 175.1], [17.5, 1.062, 171.0],
+    [20.0, 1.143, 166.8], [22.5, 1.227, 162.7], [25.0, 1.314, 158.9], [27.5, 1.401, 155.4],
+    [30.0, 1.482, 152.0], [32.5, 1.551, 149.0], [35.0, 1.216, 146.1], [37.5, 1.048, 145.2],
+    [40.0, 0.866, 145.8], [42.5, 0.689, 147.3], [45.0, 0.521, 149.9], [47.5, 0.364, 153.5],
+    [50.0, 0.223, 158.0], [52.5, 0.103, 163.2], [55.0, 0.012, 168.9], [57.5, -0.041, 174.8],
+    [60.0, -0.057, 180.5], [62.5, -0.034, 186.2], [65.0, 0.018, 191.5], [67.5, 0.096, 196.2],
+    [70.0, 0.197, 200.1], [72.5, 0.318, 203.1], [75.0, 0.452, 205.2], [77.5, 0.579, 206.3],
+    [80.0, 0.700, 206.1], [82.5, 0.809, 204.7], [85.0, 0.611, 198.0], [87.5, 0.688, 194.4],
+    [90.0, 0.756, 190.9], [92.5, 0.811, 187.8], [95.0, 0.856, 185.1], [97.5, 0.894, 183.0],
+    [100.0, 0.926, 181.6], [102.5, 0.954, 180.8], [105.0, 0.980, 180.6], [107.5, 1.004, 180.9]
+])
+
+f = datos[:, 0]
+V = datos[:, 1]
+Z = datos[:, 2]
+
+# Algoritmo explícito para la Interpolación de Lagrange de 2do Grado
+def calcular_lagrange_2(xe, x_v, y_v):
+    L0 = ((xe - x_v[1]) * (xe - x_v[2])) / ((x_v[0] - x_v[1]) * (x_v[0] - x_v[2]))
+    L1 = ((xe - x_v[0]) * (xe - x_v[2])) / ((x_v[1] - x_v[0]) * (x_v[1] - x_v[2]))
+    L2 = ((xe - x_v[0]) * (xe - x_v[1])) / ((x_v[2] - x_v[0]) * (x_v[2] - x_v[1]))
+    return y_v[0]*L0 + y_v[1]*L1 + y_v[2]*L2
+
+# 2. CONSTRUCCIÓN DEL SPLINE CÚBICO NATURAL FORZADO (S''(x) = 0 en los extremos)
+spline_V = CubicSpline(f, V, bc_type='natural')
+spline_Z = CubicSpline(f, Z, bc_type='natural')
+
+frecuencias_eval = [41.0, 73.0]
+
+print("=== PARTE 1: RESULTADOS NUMÉRICOS OBTENIDOS ===")
+print("-" * 55)
+
+for fe in frecuencias_eval:
+    # Seleccionar dinámicamente los 3 puntos más cercanos
+    indices_cercanos = np.argsort(np.abs(f - fe))[:3]
+    idx_3 = np.sort(indices_cercanos)
+    
+    # Evaluar en Lagrange y Spline Cúbico
+    V_lag = calcular_lagrange_2(fe, f[idx_3], V[idx_3])
+    Z_lag = calcular_lagrange_2(fe, f[idx_3], Z[idx_3])
+    V_sp = spline_V(fe)
+    Z_sp = spline_Z(fe)
+    
+    print(f"Frecuencia evaluada: {fe} kHz")
+    print(f"  -> Lagrange (2do grado): V = {V_lag:.4f} V  |  |Z| = {Z_lag:.2f} Ω")
+    print(f"  -> Spline Cúbico Natural: V = {V_sp:.4f} V  |  |Z| = {Z_sp:.2f} Ω")
+    print("-" * 55)
